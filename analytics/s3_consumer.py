@@ -66,8 +66,8 @@ class S3Consumer(Thread):
         if current_files['KeyCount'] > 0:
             if delete_first:
                 self.log.info('Deleting all files in folder [%s]...', prefix)
-                result = s3_client.delete_objects(
-                        Bucket=bucket,
+                result = self.s3.delete_objects(
+                        Bucket=s3_details['bucket'],
                         Delete={
                             'Objects': [{'Key': item['Key']} for item in current_files['Contents']]
                         }

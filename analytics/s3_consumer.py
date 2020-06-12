@@ -30,7 +30,7 @@ class S3Consumer(Thread):
     )
 
     def __init__(self, queue, write_key, upload_size=10*MB, on_error=None,
-                 endpoint=None, dt=None, key_decorator=lambda x: x):
+                 endpoint=None, dt=None, key_decorator=lambda x: x, delete_first=False):
         """Create a consumer thread.
         upload_size is the size of chunk in bytes.
         """
@@ -62,12 +62,22 @@ class S3Consumer(Thread):
             Bucket=s3_details['bucket'],
             Prefix=prefix+'/',
         )
+
         if current_files['KeyCount'] > 0:
-            raise Exception("There are {len} current files exist in s3://{bucket}/{prefix}/".format(
-                len=current_files['KeyCount'],
-                bucket=s3_details['bucket'],
-                prefix=prefix,
-            ))
+            if delete_first:
+                self.log.info('Deleting all files in folder [%s]...', prefix)
+                result = self.s3.delete_objects(
+                        Bucket=s3_details['bucket'],
+                        Delete={
+                            'Objects': [{'Key': item['Key']} for item in current_files['Contents']]
+                        }
+                    )
+            else:
+                raise Exception("There are {len} current files exist in s3://{bucket}/{prefix}/".format(
+                    len=current_files['KeyCount'],
+                    bucket=s3_details['bucket'],
+                    prefix=prefix,
+                ))
 
         # %d token will be preserved for future substitution
         key_template = '{prefix}/{job_id}-part-%04d.json.gz'

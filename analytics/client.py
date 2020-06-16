@@ -26,15 +26,11 @@ class Client(object):
     """Create a new Segment client.
 
     upload_size has different meaning, depending on chosen transport.
-
     For http transport upload_size means number of items to be batched
     in a single POST request to backend.
-
-    For s3 and s3_delete_first transport upload_size means size in bytes of _uncompressed_
+    For s3 transport upload_size means size in bytes of _uncompressed_
     partition of the data. Sane default value is between 10 and 100 MB
     depending on compressability of underlying data.
-
-    s3_delete_first deletes all the contents of the target folder before 
     """
     log = logging.getLogger('segment')
 
@@ -57,12 +53,8 @@ class Client(object):
             self.consumer = S3Consumer(self.queue, write_key, endpoint=endpoint,
                                        on_error=on_error, upload_size=upload_size,
                                        key_decorator=key_decorator)
-        elif transport == 's3_delete_first':
-            self.consumer = S3Consumer(self.queue, write_key, endpoint=endpoint,
-                                       on_error=on_error, upload_size=upload_size,
-                                       key_decorator=key_decorator, delete_first=True)
         else:
-            raise ValueError("transport should be either http, s3 or s3_delete_first")
+            raise ValueError("transport should be either http or s3")
 
         if debug:
             self.log.setLevel(logging.DEBUG)
